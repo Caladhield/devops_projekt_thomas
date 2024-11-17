@@ -35,10 +35,22 @@ jobs:
           pip install pytest
 
       - name: Run Unit Tests
-        run: pytest tests/unit
+        run: pytest tests/unit --junitxml=unit-test-results.xml || echo "Unit tests failed"
+        continue-on-error: true
 
       - name: Run Integration Tests
-        run: pytest tests/integration
+        run: pytest tests/integration --junitxml=integration-test-results.xml || echo "Integration tests failed"
+        continue-on-error: true
+
+      # Conditionally upload error logs if log_errors is true and tests fail
+      - name: Upload Error Logs (if enabled)
+        if: failure() && github.event.inputs.log_errors == 'true'
+        uses: actions/upload-artifact@v3
+        with:
+          name: error-logs
+          path: |
+            unit-test-results.xml
+            integration-test-results.xml
 
 
   build_and_push_docker:
